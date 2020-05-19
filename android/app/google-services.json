@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "101465478349",
+    "firebase_url": "https://pubnubchat-44bda.firebaseio.com",
+    "project_id": "pubnubchat-44bda",
+    "storage_bucket": "pubnubchat-44bda.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:101465478349:android:2a5c40b49bc4f2b61a0584",
+        "android_client_info": {
+          "package_name": "com.pubnubchat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "101465478349-vn7jf1e15dl8r5k0i662gh2rp8eqhsbi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAj847ZpGlT7RyCH84MyIpCU8LBZRNWgqI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "101465478349-vn7jf1e15dl8r5k0i662gh2rp8eqhsbi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

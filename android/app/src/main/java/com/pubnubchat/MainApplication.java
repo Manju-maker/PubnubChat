@@ -3,9 +3,13 @@ package com.pubnubchat;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import io.invertase.firebase.RNFirebasePackage;
+// import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;
+import com.zmxv.RNSound.RNSoundPackage;
+import com.rnim.rn.audio.ReactNativeAudioPackage;
+import com.imagepicker.ImagePickerPackage;
 import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;
 import com.geektime.rnonesignalandroid.ReactNativeOneSignalPackage;
-import com.auth0.react.A0Auth0Package;
 import com.oblador.vectoricons.VectorIconsPackage;
 import com.swmansion.gesturehandler.react.RNGestureHandlerPackage;
 import com.facebook.react.ReactNativeHost;
@@ -28,9 +32,12 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new RNFirebasePackage(),
+            new RNSoundPackage(),
+            new ReactNativeAudioPackage(),
+            new ImagePickerPackage(),
             new AsyncStoragePackage(),
             new ReactNativeOneSignalPackage(),
-            new A0Auth0Package(),
             new VectorIconsPackage(),
             new RNGestureHandlerPackage()
       );

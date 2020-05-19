@@ -1,10 +1,5 @@
 import React, { Component } from "react";
-import Auth0 from "react-native-auth0";
 import AsyncStorage from "@react-native-community/async-storage";
-const auth0 = new Auth0({
-  domain: "kris101.auth0.com",
-  clientId: "SNA0RFXvxb_YYB3veYHYkgrYjb8XFRdb"
-});
 import {
   View,
   Text,
@@ -22,18 +17,11 @@ class Login extends Component {
     username: "",
     password: ""
   };
-  register() {
-    return this.props.navigation.navigate("Register");
-  }
   login() {
     if (
-      (user[0].username == this.state.username &&
-        user[0].password == this.state.password) ||
-      (user[1].username == this.state.username &&
-        user[1].password == this.state.password)
-    ) {
-      // console.log("cc");
-
+      (user[0].username == this.state.username && user[0].password == this.state.password) ||
+      (user[1].username == this.state.username &&user[1].password == this.state.password)) {
+     
       this.props.navigation.navigate("MainChat", {
         username: this.state.username
       });
@@ -49,25 +37,7 @@ class Login extends Component {
       console.log(e);
     }
   };
-  Auth0Login = () => {
-    auth0.webAuth
-      .authorize({
-        scope: "openid email"
-      })
-      .then(res => {
-        console.log(res);
-        auth0.auth
-          .userInfo({ token: res.accessToken })
-          .then(user => {
-            this.props.navigation.navigate("PhoneInput", {
-              username: user.email
-            });
-          })
-          .catch(console.error);
-      })
-      .catch(error => console.log(error));
-  };
-
+ 
   render() {
     return (
       <View style={styles.container}>
@@ -98,12 +68,6 @@ class Login extends Component {
         <View style={styles.btnContiner}>
           <TouchableOpacity style={styles.btn} onPress={() => this.login()}>
             <Text style={styles.btntext}>Login</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={() => this.Auth0Login()}
-          >
-            <Text style={styles.btntext}>Login with Auth0</Text>
           </TouchableOpacity>
         </View>
       </View>

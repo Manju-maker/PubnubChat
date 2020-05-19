@@ -5353,14 +5353,6 @@ react-modal@^3.8.1:
     react-lifecycles-compat "^3.0.0"
     warning "^4.0.3"
 
-react-native-auth0@^1.4.2:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/react-native-auth0/-/react-native-auth0-1.4.2.tgz#683049fb81f05c63b0a2401c26a30eadc216a34d"
-  integrity sha512-F4OBDkj7JoeJ2ysq+k9boqhMt+9OKXpG9go6ejtVXeAxTrJ5dPhnBHb/ehYwleVr5T6W6c00ooRFYKVZIeRC+Q==
-  dependencies:
-    base-64 "^0.1.0"
-    url "^0.11.0"
-
 react-native-communications@2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/react-native-communications/-/react-native-communications-2.2.1.tgz#7883b56b20a002eeb790c113f8616ea8692ca795"

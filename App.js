@@ -9,9 +9,6 @@
 import { createStackNavigator, createAppContainer } from "react-navigation";
 import Login from "./src/components/Login";
 import MainChat from "./src/components/MainChat";
-import PhoneInput from "./src/components/PhoneInput";
-import OTPVerfication from "./src/components/OTPVerfication";
-
 const AppNavigator = createStackNavigator(
   {
     Login: {
@@ -20,12 +17,12 @@ const AppNavigator = createStackNavigator(
     MainChat: {
       screen: MainChat
     },
-    PhoneInput: {
-      screen: PhoneInput
-    },
-    OTPVerfication: {
-      screen: OTPVerfication
-    }
+    // PhoneInput: {
+    //   screen: PhoneInput
+    // },
+    // OTPVerfication: {
+    //   screen: OTPVerfication
+    // }
   },
   {
     initialRouteName: "Login"
