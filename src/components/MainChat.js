@@ -5,8 +5,6 @@
  * @format
  * @flow
  */
-import PushNotificationIOS from 'react-native';
-import PushNotification from 'react-native-push-notification';
 import PubNubReact from "pubnub-react";
 import React, { Component } from "react";
 import { StyleSheet, Image, Button, FlatList,Dimensions, Alert, PermissionsAndroid, Text, View,Platform } from "react-native";
@@ -18,12 +16,14 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import Sound from "react-native-sound";
 import config from "./config";
 import ImagePicker from 'react-native-image-picker';
+import firebase from "react-native-firebase";
 const RoomName = "newRoom";
 export default class MainChat extends Component {
   constructor(props) {
     super(props);
     this.state = {
       // isTyping: false,
+      fcmTokens:"",
       messages: [],
       onlineUsers: [],
       onlineUsersCount: 0,
@@ -81,31 +81,14 @@ export default class MainChat extends Component {
   };
   componentDidMount() {
     console.log("Didmount")
-    PushNotification.configure({
-
-      onRegister: function(token){
-        console.log("tokennnnn",token);
-      },
-
-      onNotification : function(notification){
-        console.log("Notificationnn",notification);
+    this.checkPermission1();
       
-        notification.finish(PushNotificationIOS.FetchResult.notification)
-      },
-
-      popInitialNotification: true,
-
-      requestPermissions:true,
-
-    })
-
-
     this.pubnub.history(
       { channel: RoomName, reverse: true, count: 50 },
       (status, res) => {
-        // console.log("res>", res);
+        console.log("res>", res);
         let newmessage = [];
-        res.messages.forEach(function (element, index) {
+        res.messages && res.messages.forEach(function (element, index) {
           newmessage[index] = element.entry[0];
         });
         this.setState(previousState => ({
@@ -129,6 +112,43 @@ export default class MainChat extends Component {
       };
   });
   }
+
+
+  checkPermission1 = async () => {
+    const enabled = await firebase.messaging().hasPermission().then(res=>{
+      console.log("has permisiion>>>>>>",res)
+    });
+    if (enabled) {
+      console.log("enabled permission")
+      this.getToken();
+    } else {
+      console.log("request permission")
+      this.requestPermission();
+    }
+  };
+  async requestPermission() {
+    try {
+      console.log("inisde reqstprmissn funtion")
+      await firebase.messaging().requestPermission()
+      this.getToken();
+    } catch (error) {
+      console.warn("permission rejected");
+    }
+  }
+
+  async getToken() {
+    let fcmToken = await firebase.messaging().getToken();
+    console.log(">>> fcmToken", fcmToken);
+     this.state.fcmTokens = "fJE9CefDFxc:APA91bEOHT3e6hw9_yN-TIrQeerIsags9u7SGDB_57UqDlZXpORQ1HCXF4tPycyLsxxMUW1FRfYyc1ZlnpZzFhaLNAyDPA5bpKNpvlSqvFicaTBOPoNy68Df-EsvrKKB6OihjAl0cF3j";
+
+   if(fcmToken){
+      loadNotificationToken && loadNotificationToken({ notification_token: this.state.fcmTokens });
+   }
+  }
+
+  
+
+
 
   checkPermission() {
     if (Platform.OS !== "android") {
@@ -173,6 +193,7 @@ console.log("messages",messages)
       message: messages,
       channel: RoomName
     });
+
   }
 
   PresenceStatus = () => {
@@ -343,6 +364,7 @@ renderAudio = props => {
 }
 
   handleAddPicture = () => {
+        
     const { user } = this.props; // wherever you user data is stored;
     const options = {
       title: "Select Profile Pic",
@@ -388,6 +410,7 @@ renderAudio = props => {
         })
 
     });
+  
   };
   handleAudio = async () => {
     if (!this.state.startAudio) {
@@ -426,6 +449,78 @@ renderAudio = props => {
     }
 };
 
+sendMessage=()=>{
+    const messagePayload ={ 
+      "pn_gcm": { "data": { "message": "hello" } }, 
+      "pn_apns": { "aps": { "alert": "hello" } }, 
+      "pn_debug": true 
+ };
+    this.pubnub.push.addChannels({
+      channels: ["notification"],
+      device: "fRh7fkeNQGY:APA91bGAQAj9RfJbHIG6kHSzwGPJ0WEF54rqly6s2mZ1XHfV9XFfg6PUyWj8w8lsexWF67cwb9ug2hiykewouiKHsePmoRs6lFRlfOVzLlfVycdwuZiGWr2ay3N55lD9dbThjS2dgBfH",
+      pushGateway: 'gcm',
+    }, (status) => {
+      if (status.error) {
+        console.log('operation failed w/ status>>>>>>>>>>>>>>>>>1: ', status,"responseeee",response);
+      } else {
+        console.log("is suceesss>>>>",status)
+        let payload = {
+          "text": "John invited you to chat",
+          "room": "notification",
+          "pn_apns": {
+            "aps": {
+              "alert": {
+                "title": "Chat invite",
+                "body": "John invited you to chat"
+              },
+              "sound": "default"
+            },
+          },
+          "pn_gcm": {
+            "notification": {
+              "title": "Chat invite",
+              "body": "John invited you to chat",
+              "sound": "default"
+            }
+          }
+        };
+            // payload.text = "John invited you to chat";
+            // payload.room = "foo-newRoom";
+
+            // // create the generic title/message content
+            // let pushData = this.pubnub.notificationPayload(
+            //   "Chat invite", "John invited you to chat");
+            // pushData.sound = "default";
+            // let pushPayload = pushData.buildPayload(["apns2", "fcm"]);
+            // Object.assign(payload, pushPayload);
+        this.pubnub.publish({
+          message: payload,
+          channel: ["notification"],
+          }, (status,response) => {
+            if(status.error){
+              console.log('operation failed w/ status>>>>>>>>>>>>2: ', status,"res>>>>>>>>>",response);
+
+            }
+            else{
+              console.log('doneeeee');
+            }
+           
+          });
+        this.pubnub.push.listChannels(
+          {
+            device:"fRh7fkeNQGY:APA91bGAQAj9RfJbHIG6kHSzwGPJ0WEF54rqly6s2mZ1XHfV9XFfg6PUyWj8w8lsexWF67cwb9ug2hiykewouiKHsePmoRs6lFRlfOVzLlfVycdwuZiGWr2ay3N55lD9dbThjS2dgBfH",       
+            pushGateway: "gcm"
+          },
+          function(status,response) {
+            console.log("statusssS>>>>>>>>>>>>>>>>>>>",response);
+          }
+        );
+       
+      }
+    });
+    // console.log("mesgage paylod",messagePayload)
+    
+}
 
 
   render() {
@@ -433,7 +528,7 @@ renderAudio = props => {
     let username = this.props.navigation.getParam("username");
     return (
       <View style={{ flex: 1 }}>
-        <Button onPress={this.handleAddPicture} title="Add Picture" color="red" />
+        <Button onPress={this.sendMessage} title="Add Picture" color="red" />
         <Ionicons
                 name="ios-mic"
                 size={35}
