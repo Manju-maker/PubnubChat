@@ -7,7 +7,18 @@
  */
 import PubNubReact from "pubnub-react";
 import React, { Component } from "react";
-import { StyleSheet, Image, Button, FlatList,Dimensions, Alert, PermissionsAndroid, Text, View,Platform } from "react-native";
+import {
+  StyleSheet,
+  Image,
+  Button,
+  FlatList,
+  Dimensions,
+  Alert,
+  PermissionsAndroid,
+  Text,
+  View,
+  Platform
+} from "react-native";
 import { GiftedChat, Bubble } from "react-native-gifted-chat";
 import AsyncStorage from "@react-native-community/async-storage";
 import _ from "lodash";
@@ -15,23 +26,23 @@ import { AudioRecorder, AudioUtils } from "react-native-audio";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Sound from "react-native-sound";
 import config from "./config";
-import ImagePicker from 'react-native-image-picker';
+import ImagePicker from "react-native-image-picker";
 import firebase from "react-native-firebase";
-const RoomName = "newRoom";
+const RoomName = "Chat-1";
 export default class MainChat extends Component {
   constructor(props) {
     super(props);
     this.state = {
       // isTyping: false,
-      fcmTokens:"",
+      fcmTokens: "",
       messages: [],
       onlineUsers: [],
       onlineUsersCount: 0,
       startAudio: false,
       hasPermission: false,
       audioPath: `${
-          AudioUtils.DocumentDirectoryPath
-          }/${this.messageIdGenerator()}test.aac`,
+        AudioUtils.DocumentDirectoryPath
+      }/${this.messageIdGenerator()}test.aac`,
       playAudio: false,
       audioSettings: {
         SampleRate: 22050,
@@ -41,7 +52,7 @@ export default class MainChat extends Component {
         MeteringEnabled: true,
         IncludeBase64: true,
         AudioEncodingBitRate: 32000
-    }
+      }
     };
     this.pubnub = new PubNubReact({
       publishKey: config.pubnub_publishKey,
@@ -80,15 +91,16 @@ export default class MainChat extends Component {
     };
   };
   componentDidMount() {
-    console.log("Didmount")
+    console.log("Didmount");
     this.checkPermission1();
-      
+    // this.initialiseFirebase();
     this.pubnub.history(
       { channel: RoomName, reverse: true, count: 50 },
       (status, res) => {
         console.log("res>", res);
         let newmessage = [];
-        res.messages && res.messages.forEach(function (element, index) {
+        res.messages &&
+          res.messages.forEach(function(element, index) {
           newmessage[index] = element.entry[0];
         });
         this.setState(previousState => ({
@@ -101,35 +113,37 @@ export default class MainChat extends Component {
       this.setState({ hasPermission });
       if (!hasPermission) return;
       await AudioRecorder.prepareRecordingAtPath(
-          this.state.audioPath,
-          this.state.audioSettings
+        this.state.audioPath,
+        this.state.audioSettings
       );
       AudioRecorder.onProgress = data => {
-          // console.log(data, "onProgress data");
+        // console.log(data, "onProgress data");
       };
       AudioRecorder.onFinished = data => {
-          // console.log(data, "on finish");
+        // console.log(data, "on finish");
       };
-  });
+    });
   }
 
-
   checkPermission1 = async () => {
-    const enabled = await firebase.messaging().hasPermission().then(res=>{
-      console.log("has permisiion>>>>>>",res)
-    });
+    const enabled = await firebase
+      .messaging()
+      .hasPermission()
+      .then(res => {
+        console.log("has permisiion>>>>>>", res);
+      });
     if (enabled) {
-      console.log("enabled permission")
+      console.log("enabled permission");
       this.getToken();
     } else {
-      console.log("request permission")
+      console.log("request permission");
       this.requestPermission();
     }
   };
   async requestPermission() {
     try {
-      console.log("inisde reqstprmissn funtion")
-      await firebase.messaging().requestPermission()
+      console.log("inisde reqstprmissn funtion");
+      await firebase.messaging().requestPermission();
       this.getToken();
     } catch (error) {
       console.warn("permission rejected");
@@ -139,37 +153,29 @@ export default class MainChat extends Component {
   async getToken() {
     let fcmToken = await firebase.messaging().getToken();
     console.log(">>> fcmToken", fcmToken);
-     this.state.fcmTokens = "fJE9CefDFxc:APA91bEOHT3e6hw9_yN-TIrQeerIsags9u7SGDB_57UqDlZXpORQ1HCXF4tPycyLsxxMUW1FRfYyc1ZlnpZzFhaLNAyDPA5bpKNpvlSqvFicaTBOPoNy68Df-EsvrKKB6OihjAl0cF3j";
-
-   if(fcmToken){
-      loadNotificationToken && loadNotificationToken({ notification_token: this.state.fcmTokens });
-   }
+    this.setState({ fcmTokens: fcmToken });
   }
-
-  
-
-
 
   checkPermission() {
     if (Platform.OS !== "android") {
-        return Promise.resolve(true);
+      return Promise.resolve(true);
     }
     const rationale = {
-        title: "Microphone Permission",
-        message:
-            "AudioExample needs access to your microphone so you can record audio."
+      title: "Microphone Permission",
+      message:
+        "AudioExample needs access to your microphone so you can record audio."
     };
     return PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        rationale
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      rationale
     ).then(result => {
-        // console.log("Permission result:", result);
-        return result === true || result === PermissionsAndroid.RESULTS.GRANTED;
+      // console.log("Permission result:", result);
+      return result === true || result === PermissionsAndroid.RESULTS.GRANTED;
     });
-}
+  }
 
   componentWillMount() {
-    console.log("Willmount")
+    console.log("Willmount");
     // this.Typing();
     this.props.navigation.setParams({
       onlineUsersCount: this.state.onlineUsersCount,
@@ -180,27 +186,40 @@ export default class MainChat extends Component {
       channels: [RoomName],
       withPresence: true
     });
+    this.pubnub.push.addChannels(
+      {
+        channels: ["notification"],
+        device: this.state.fcmTokens,
+        pushGateway: "gcm"
+      },
+      status => {
+        if (status.error) {
+          console.log("operation failed w/ status>>>>>>>>>>>>>>>>>1: ", status);
+        } else {
+          console.log("is suceesss>>>>", status);
+        }
+      }
+    );
     this.pubnub.getMessage(RoomName, m => {
       this.setState(previousState => ({
         messages: GiftedChat.append(previousState.messages, m["message"])
       }));
     });
-
   }
   onSend(messages = []) {
-console.log("messages",messages)
+    console.log("messages", messages);
+    this.sendNotification(messages[0].text);
     this.pubnub.publish({
       message: messages,
       channel: RoomName
     });
-
   }
 
   PresenceStatus = () => {
-    console.log("presnce status")
+    console.log("presnce status");
     this.pubnub.getPresence(RoomName, presence => {
       if (presence.action === "join") {
-        console.log("users onilne", this.state.onlineUsers)
+        console.log("users onilne", this.state.onlineUsers);
         let users = this.state.onlineUsers;
 
         users.push({
@@ -220,7 +239,7 @@ console.log("messages",messages)
       }
 
       if (presence.action === "leave" || presence.action === "timeout") {
-        console.log("leave or timreout")
+        console.log("leave or timreout");
         let leftUsers = this.state.onlineUsers.filter(
           users => users.uuid !== presence.uuid
         );
@@ -254,7 +273,7 @@ console.log("messages",messages)
                   uuid: user
                 })
             );
-            console.log("presence.join.length>>>>>>>", presence.join.length)
+            console.log("presence.join.length>>>>>>>", presence.join.length);
             onlineUsersCount += presence.join.length;
           }
 
@@ -295,76 +314,87 @@ console.log("messages",messages)
 
   renderBubble = props => {
     return (
-        <View>
-            {this.renderAudio(props)}
-            <Bubble {...props} />
-        </View>
+      <View>
+        {this.renderAudio(props)}
+        <Bubble {...props} />
+      </View>
     );
-};
-handleAvatarPress = props => {
-  // add navigation to user's profile
-};
+  };
+  handleAvatarPress = props => {
+    // add navigation to user's profile
+  };
 
-renderAudio = props => {
-  console.log("playadiooooooooooooooo",props.currentMessage._id)
-  return !props.currentMessage.audio ? (
+  renderAudio = props => {
+    console.log("playadiooooooooooooooo", props.currentMessage._id);
+    return !props.currentMessage.audio ? (
       <View />
-  ) : (
-          <Ionicons
-          key={props.currentMessage._id}
-              name="ios-play"
-              size={35}
-              color={this.state.playAudio ? "red" : "blue"}
-              style={{
-                  left: 90,
-                  position: "relative",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.5,
-                  backgroundColor: "transparent"
-              }}
-               onPress={() => {
-                // console.log("playaudio 1st",this.state.playAudio)
-               if(!this.state.playAudio){
-                  this.setState({
-                      playAudio: true, messages:[...this.state.messages]
-                  },()=>{
-                    this.sound = new Sound(props.currentMessage.audio, "", error => {
-                      if (error) {
-                          console.log("failed to load the sound", error);
-                      }
-                     
-                      this.sound.play(success => {
-                        this.setState({ playAudio: false ,  messages:[...this.state.messages]});
-                          // console.log(success, "success play");
-                          if (!success) {
-                              Alert.alert("There was an error playing this audio");
-                          }
-                          
-                      });
-                  });
-                  });
-                }
-                else{
-                  this.sound.stop();
-                  this.setState({ playAudio: false , messages:[...this.state.messages]});
-                }
-              }}
-          />
-      );
-};
+    ) : (
+      <Ionicons
+        key={props.currentMessage._id}
+        name="ios-play"
+        size={35}
+        color={this.state.playAudio ? "red" : "blue"}
+        style={{
+          left: 90,
+          position: "relative",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.5,
+          backgroundColor: "transparent"
+        }}
+        onPress={() => {
+          // console.log("playaudio 1st",this.state.playAudio)
+          if (!this.state.playAudio) {
+            this.setState(
+              {
+                playAudio: true,
+                messages: [...this.state.messages]
+              },
+              () => {
+                this.sound = new Sound(
+                  props.currentMessage.audio,
+                  "",
+                  error => {
+                    if (error) {
+                      console.log("failed to load the sound", error);
+                    }
 
-  messageIdGenerator=()=>{
+                    this.sound.play(success => {
+                      this.setState({
+                        playAudio: false,
+                        messages: [...this.state.messages]
+                      });
+                      // console.log(success, "success play");
+                      if (!success) {
+                        Alert.alert("There was an error playing this audio");
+                      }
+                    });
+                  }
+                );
+              }
+            );
+          } else {
+            this.sound.stop();
+            this.setState({
+              playAudio: false,
+              messages: [...this.state.messages]
+            });
+          }
+        }}
+      />
+    );
+  };
+
+  messageIdGenerator = () => {
     // generates uuid.
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-        let r = (Math.random() * 16) | 0,
-            v = c == "x" ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
+      let r = (Math.random() * 16) | 0,
+        v = c == "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
     });
-}
+  };
 
   handleAddPicture = () => {
-        
     const { user } = this.props; // wherever you user data is stored;
     const options = {
       title: "Select Profile Pic",
@@ -388,15 +418,15 @@ renderAudio = props => {
         name: `${this.messageIdGenerator()}.${extension}`,
         type: correspondingMime[allowedExtensions.indexOf(extension)]
       };
-      this.setState({image:file})
+      this.setState({ image: file });
       let username = this.props.navigation.getParam("username");
       const message = {};
       message._id = this.messageIdGenerator();
       message.createdAt = Date.now();
       message.user = {
-          _id: username,
-          name:username,
-          avatar: "https://robohash.org/" + username
+        _id: username,
+        name: username,
+        avatar: "https://robohash.org/" + username
       };
       message.messageType = "image";
       message.image = uri;
@@ -404,146 +434,111 @@ renderAudio = props => {
       // this.setState({messages: [...this.state.messages,message]},()=>{
       //   console.log("messagesss",this.state.messages)
       // })
-        this.pubnub.publish({
-          message:[message],
-          channel:RoomName
-        })
-
+      this.pubnub.publish({
+        message: [message],
+        channel: RoomName
+      });
     });
-  
   };
   handleAudio = async () => {
     if (!this.state.startAudio) {
-        this.setState({
-            startAudio: true
-        });
-        await AudioRecorder.startRecording();
+      this.setState({
+        startAudio: true
+      });
+      await AudioRecorder.startRecording();
     } else {
-        this.setState({ startAudio: false });
-        await AudioRecorder.stopRecording();
-        const { audioPath } = this.state;
-        let username = this.props.navigation.getParam("username");
-     
-        const fileName = `${this.messageIdGenerator()}.aac`;
-        const file = {
-            uri: audioPath ,
-            name: fileName,
-            type: `audio/aac`
-        };
-            const message = {};
-                message._id = this.messageIdGenerator();
-                message.createdAt = Date.now();
-                message.user = {
-                    _id: username,
-                    name: username,
-                    avatar:  "https://robohash.org/" + username
-                };
-                message.audio = audioPath;
-                message.messageType = "audio";
-                this.pubnub.publish({
-                  message:[message],
-                  channel:RoomName
-                })
+      this.setState({ startAudio: false });
+      await AudioRecorder.stopRecording();
+      const { audioPath } = this.state;
+      let username = this.props.navigation.getParam("username");
 
-        
+      const fileName = `${this.messageIdGenerator()}.aac`;
+      const file = {
+        uri: audioPath,
+        name: fileName,
+        type: `audio/aac`
+      };
+      const message = {};
+      message._id = this.messageIdGenerator();
+      message.createdAt = Date.now();
+      message.user = {
+        _id: username,
+        name: username,
+        avatar: "https://robohash.org/" + username
+      };
+      message.audio = audioPath;
+      message.messageType = "audio";
+      this.pubnub.publish({
+        message: [message],
+        channel: RoomName
+      });
     }
-};
-
-sendMessage=()=>{
-    const messagePayload ={ 
-      "pn_gcm": { "data": { "message": "hello" } }, 
-      "pn_apns": { "aps": { "alert": "hello" } }, 
-      "pn_debug": true 
- };
-    this.pubnub.push.addChannels({
-      channels: ["notification"],
-      device: "fRh7fkeNQGY:APA91bGAQAj9RfJbHIG6kHSzwGPJ0WEF54rqly6s2mZ1XHfV9XFfg6PUyWj8w8lsexWF67cwb9ug2hiykewouiKHsePmoRs6lFRlfOVzLlfVycdwuZiGWr2ay3N55lD9dbThjS2dgBfH",
-      pushGateway: 'gcm',
-    }, (status) => {
-      if (status.error) {
-        console.log('operation failed w/ status>>>>>>>>>>>>>>>>>1: ', status,"responseeee",response);
-      } else {
-        console.log("is suceesss>>>>",status)
-        let payload = {
-          "text": "John invited you to chat",
-          "room": "notification",
-          "pn_apns": {
-            "aps": {
-              "alert": {
-                "title": "Chat invite",
-                "body": "John invited you to chat"
-              },
-              "sound": "default"
-            },
+  };
+  sendNotification = message => {
+    let payload = {
+      room: "notification",
+      pn_apns: {
+        aps: {
+          alert: {
+            title: "New Mesaage",
+            body: "John invited you to chat"
           },
-          "pn_gcm": {
-            "notification": {
-              "title": "Chat invite",
-              "body": "John invited you to chat",
-              "sound": "default"
-            }
-          }
-        };
-            // payload.text = "John invited you to chat";
-            // payload.room = "foo-newRoom";
-
-            // // create the generic title/message content
-            // let pushData = this.pubnub.notificationPayload(
-            //   "Chat invite", "John invited you to chat");
-            // pushData.sound = "default";
-            // let pushPayload = pushData.buildPayload(["apns2", "fcm"]);
-            // Object.assign(payload, pushPayload);
-        this.pubnub.publish({
-          message: payload,
-          channel: ["notification"],
-          }, (status,response) => {
-            if(status.error){
-              console.log('operation failed w/ status>>>>>>>>>>>>2: ', status,"res>>>>>>>>>",response);
-
-            }
-            else{
-              console.log('doneeeee');
-            }
-           
-          });
-        this.pubnub.push.listChannels(
-          {
-            device:"fRh7fkeNQGY:APA91bGAQAj9RfJbHIG6kHSzwGPJ0WEF54rqly6s2mZ1XHfV9XFfg6PUyWj8w8lsexWF67cwb9ug2hiykewouiKHsePmoRs6lFRlfOVzLlfVycdwuZiGWr2ay3N55lD9dbThjS2dgBfH",       
-            pushGateway: "gcm"
-          },
-          function(status,response) {
-            console.log("statusssS>>>>>>>>>>>>>>>>>>>",response);
-          }
-        );
-       
+          sound: "default"
+        }
+      },
+      pn_gcm: {
+        notification: {
+          title: "New Message",
+          body: message,
+          sound: "default"
+        }
       }
-    });
-    // console.log("mesgage paylod",messagePayload)
-    
-}
-
+    };
+    this.pubnub.publish(
+      {
+        message: payload,
+        channel: ["notification"]
+      },
+      (status, response) => {
+        if (status.error) {
+          console.log(
+            "operation failed w/ status>>>>>>>>>>>>2: ",
+            status,
+            "res>>>>>>>>>",
+            response
+          );
+        } else {
+          console.log("doneeeee");
+        }
+      }
+    );
+  };
 
   render() {
-    console.log("render")
+    console.log("render");
     let username = this.props.navigation.getParam("username");
     return (
       <View style={{ flex: 1 }}>
-        <Button onPress={this.sendMessage} title="Add Picture" color="red" />
+        <Button
+          onPress={this.handleAddPicture}
+          title="Add Picture"
+          color="red"
+        />
         <Ionicons
-                name="ios-mic"
-                size={35}
-                color={this.state.startAudio ? "red" : "black"}
-                style={{
-                  marginLeft:20,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.5,
-                  zIndex: 2,
-                  backgroundColor: "transparent"
-              }}
-              onPress={this.handleAudio}
-                />
-       
+          name="ios-mic"
+          size={35}
+          color={this.state.startAudio ? "red" : "black"}
+          style={{
+            marginLeft: 20,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.5,
+            zIndex: 2,
+            backgroundColor: "transparent"
+          }}
+          onPress={this.handleAudio}
+        />
+
         <View style={styles.online_user_wrapper}>
           {this.state.onlineUsers.map((item, index) => {
             return (
@@ -564,7 +559,7 @@ sendMessage=()=>{
         <GiftedChat
           messages={this.state.messages}
           onSend={messages => {
-            this.onSend(messages)
+            this.onSend(messages);
           }}
           alwaysShowSend
           onPressAvatar={this.handleAvatarPress}
@@ -575,7 +570,6 @@ sendMessage=()=>{
             name: username,
             avatar: "https://robohash.org/" + username
           }}
-
         />
       </View>
     );
